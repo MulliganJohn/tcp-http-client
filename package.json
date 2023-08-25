@@ -1,0 +1,8 @@
+{
+  "name": "tcp-http-client",
+  "version": "1.0.0",
+  "description": "Basic Http client using built in net and tls modules",
+  "main": "index.js",
+  "author": "John M",
+  "license": "ISC"
+}
