@@ -4,7 +4,5 @@
   "description": "Basic Http client using built in net and tls modules",
   "main": "index.js",
   "author": "John M",
-  "repository": "https://github.com/MulliganJohn/tcp-http-client",
-  "homepage": "https://github.com/MulliganJohn/tcp-http-client",
   "license": "ISC"
 }
