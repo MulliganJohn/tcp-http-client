@@ -7,12 +7,18 @@ class TCPHttpRequest{
         this.content = null;
         this.httpMethod = httpMethod;
         this.keepAlive = true;
+        this.addHeader("host", url.hostname)
     }
 
     addHeader(headerName, headerValue) {
-        this.headers.push({ name: headerName, value: headerValue });
-        if (headerName.toLowerCase() === "connection" && headerValue.toLowerCase() === "close"){
-          this.keepAlive = false;
+        const existingHeaderIndex = this.headers.findIndex(header => header.name === headerName);
+        if (existingHeaderIndex !== -1) {
+            this.headers[existingHeaderIndex].value = headerValue;
+        } else {
+            this.headers.push({ name: headerName, value: headerValue });
+        }
+        if (headerName.toLowerCase() === "connection" && headerValue.toLowerCase() === "close") {
+            this.keepAlive = false;
         }
     }
 
