@@ -1,4 +1,4 @@
-const { URL } = require('url');
+const TCPHttpMethod = require('./TCPHttpMethod');
 class TCPHttpRequest{
     constructor(url, httpMethod) {
         this.url = url;
