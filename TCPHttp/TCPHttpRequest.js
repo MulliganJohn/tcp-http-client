@@ -5,7 +5,7 @@ class TCPHttpRequest{
         this.headers = [];
         this.cookies = [];
         this.content = null;
-        this.httpMethod = httpMethod;
+        this.httpMethod = this.checkHttpMethod(httpMethod);
         this.keepAlive = true;
         this.addHeader("host", url.hostname)
     }
@@ -21,6 +21,15 @@ class TCPHttpRequest{
             this.keepAlive = false;
         }
     }
+
+    checkHttpMethod(httpMethod){
+      if (Object.values(TCPHttpMethod).includes(httpMethod)){
+         return httpMethod;
+      }
+      else {
+         throw new Error("Invalid Http Method Specified");
+      }
+   }
 
     addCookie(cookieName, cookieValue){
         this.cookies.push({ name: cookieName, value: cookieValue })

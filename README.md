@@ -11,7 +11,8 @@ This is a basic http client written in node.js. It uses the built in tls and net
 This example will send an HTTP POST request to www.example.com. It creates the TCPHttpClient, and then creates a request to be sent by the client. It adds headers and content to the request, then sends the request / receives and then logs the response.
 
 ```javascript
-const {TCPHttpClient, TCPHttpRequest} = require('tcp-http-client');
+const {TCPHttpClient, TCPHttpRequest, TCPHttpMethod} = require('tcp-http-client');
+const { URL } = require('url');
 
 const client = new TCPHttpClient();
 
