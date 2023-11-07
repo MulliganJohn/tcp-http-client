@@ -14,7 +14,6 @@ class TCPHttpSocketPool {
         });
 
         socket.on("end", () => {
-            console.log("got socket end!");
             this.removeSocket(socketKey);
         });
     }
