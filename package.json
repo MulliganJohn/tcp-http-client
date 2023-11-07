@@ -1,6 +1,6 @@
 {
   "name": "tcp-http-client",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Basic Http client using built in net and tls modules",
   "main": "index.js",
   "author": "John M",
