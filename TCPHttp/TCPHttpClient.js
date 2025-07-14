@@ -2,17 +2,21 @@ const net = require('net');
 const tls = require('tls');
 const TCPHttpResponseMessage = require('./TCPHttpResponseMessage');
 const TCPHttpHeader = require('./TCPHttpHeader');
+const TCPHttpRequest = require('./TCPHttpRequest')
 const TCPHttpSocketPool = require('./TCPHttpSocketPool');
 const TCPHttpCookieContainer = require('./TCPHttpCookieContainer');
+const TCPHttpMethod = require('./TCPHttpMethod');
 
 class TCPHttpClient{
 
     constructor(options){
-        options = options || {};
-        this.proxy = options.proxy || null;
-        this.cookieContainerEnabled = options.CookieContainer || true;
-        this.cookieContainer = new TCPHttpCookieContainer();
-        this.socketPool = new TCPHttpSocketPool();
+        options = options || {}
+        this.proxy = options.proxy || null
+        this.cookieContainerEnabled = options.CookieContainer ?? true
+        this.cookieContainer = new TCPHttpCookieContainer()
+        this.socketPool = new TCPHttpSocketPool(options.socketTimeoutDuration)
+        this.allowRedirects = options.allowRedirects ?? false
+        this.maxRedirects = options.maxRedirects ?? 10
     }
 
     _getTlsOptions(request, socket){
@@ -32,11 +36,12 @@ class TCPHttpClient{
         return new Promise(async (resolve, reject) => {
             try{
                 if(request.url.protocol === "https:"){
-                    const response = await this._sendHttpsRequest(request);
+                    let response = await this._sendHttpsRequest(request);
+                    response = this.allowRedirects ? await this.handleRedirects(request, response) : response
                     resolve(response);
                 }
                 else if(request.url.protocol === "http:"){
-                    const response = await this._sendHttpRequest(request);
+                    let response = await this._sendHttpRequest(request);
                     resolve(response);
                 }
                 else{
@@ -47,6 +52,63 @@ class TCPHttpClient{
                 reject(new Error("Error sending request: " + error));
             }     
         });
+    }
+
+    async handleRedirects(request, response){
+        const redirectStatusCodes = [301, 302, 303, 307, 308];
+        let redirectChain = []
+        let numRedirects = 0
+        try{
+            while (redirectStatusCodes.includes(response.statusCode) && numRedirects <= this.maxRedirects){
+                const locationHeader = response.getHeaderValues("location");
+                if (!locationHeader || !locationHeader[0]) {
+                    return response
+                }
+                const newUrl = new URL(locationHeader[0].value, request.url);
+                let newRequest;
+                if ([301, 302, 303].includes(response.statusCode)){
+                    newRequest = new TCPHttpRequest(newUrl, TCPHttpMethod.GET)
+                }
+                else{
+                    newRequest = new TCPHttpRequest(newUrl, request.httpMethod)
+                    if ([TCPHttpMethod.POST, TCPHttpMethod.PUT, TCPHttpMethod.DELETE].includes(request.httpMethod) && request.content){
+                        newRequest.addContent(request.content)
+                    }
+                }
+                for (const header of request.headers){
+                    if (header.name != "Content-Type" && header.name != "Content-Length"){
+                        newRequest.addHeader(header.name, header.value)
+                    }
+                }
+                if (request.url.origin !== newRequest.url.origin) {
+                    const sensitiveHeaders = ["authorization", "proxy-authorization", "x-amz-security-token", "api-key"];
+                    newRequest.headers = newRequest.headers.filter(header => {
+                        const name = header.name.toLowerCase();
+                        return !sensitiveHeaders.some(sensitive => name === sensitive || name.includes(sensitive));
+                    });
+                }
+                if(newRequest.url.protocol === "https:"){
+                    response = await this._sendHttpsRequest(newRequest);
+                    numRedirects += 1
+                }
+                else if(newRequest.url.protocol === "http:"){
+                    response = await this._sendHttpRequest(newRequest);
+                    numRedirects += 1
+                }
+                else{
+                    throw new Error("Incorrect URL protocol");
+                }
+                redirectChain.push(newRequest.url)
+            }
+            if (numRedirects > this.maxRedirects){
+                throw new Error(`Reached Maximum Number Of Redirects: ${this.maxRedirects}`)
+            }
+            response.redirectChain = redirectChain
+            return response
+        }
+        catch (error){
+            throw new Error("Error while redirecting: " + error)
+        }
     }
 
     async connect(url){
@@ -267,7 +329,13 @@ class TCPHttpClient{
             try {
                 socket = net.createConnection({host: this.proxy.host, port: this.proxy.port}, async () =>{
                 const port = request.url.protocol === 'https:' ? 443 : 80;
-                const requestData = `CONNECT ${request.url.hostname}:${port} HTTP/1.1\r\nHost: ${request.url.hostname}:${port}\r\n\r\n`;
+                let requestData = `CONNECT ${request.url.hostname}:${port} HTTP/1.1\r\nHost: ${request.url.hostname}:${port}\r\n`;
+                if (this.proxy.authorization){
+                    const auth = `${this.proxy.authorization.username}:${this.proxy.authorization.password}`;
+                    const encodedAuth = Buffer.from(auth).toString('base64');
+                    requestData += `Proxy-Authorization: Basic ${encodedAuth}\r\n`;
+                }
+                requestData += `\r\n`;
                 socket.write(requestData);
             });
             

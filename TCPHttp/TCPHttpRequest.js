@@ -39,7 +39,7 @@ class TCPHttpRequest{
     {
         this.content = content;
         this.addHeader("Content-Type", contentType + "; charset=utf-8");
-        this.addHeader("Content-Length", content.length.toString());
+        this.addHeader("Content-Length", Buffer.byteLength(content, 'utf8'));
     }
     _getCookieHeaderString(){
         let cookieString = [];

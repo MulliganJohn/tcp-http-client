@@ -15,5 +15,12 @@ class TCPHttpCookie{
     getCookieKey(){
         return (this.cookieName + ":" + this.cookieDomain + ":" + this.cookiePath);
     }
+
+    //Allows retrieving typed object from json parsed saved cookie data
+    static fromObject(obj) {
+        const cookie = new TCPHttpCookie(obj.cookieName, obj.cookieValue)
+        Object.assign(cookie, obj)
+        return cookie
+    }
 }
 module.exports = TCPHttpCookie

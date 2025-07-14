@@ -5,9 +5,10 @@ class TCPHttpCookieContainer{
         this.cookieContainer = new Map();
     }
 
-    addCookie(cookieString, url){
+    addCookie(cookieString, url, rawCookie = false){
         try{
-            const newCookie = this.parseCookie(cookieString, url);
+            //allows manual addition of saved cookie objects into the cookie container rather than set-cookie string or one time cookie requests
+            const newCookie = rawCookie ? cookieString : this.parseCookie(cookieString, url);
             const cookiePathMap = this.cookieContainer.get(newCookie.cookieDomain);
             //Cookie container does not contain a key with the current cookie domain value
             if (!cookiePathMap){
@@ -96,7 +97,7 @@ class TCPHttpCookieContainer{
     removeCookies(deletion){
         deletion.forEach(cookieInfo => {
             const pathMap = this.cookieContainer.get(cookieInfo.domain);
-            const cookiemap = pathMap.get(cookieInfo.path);
+            const cookieMap = pathMap.get(cookieInfo.path);
             cookieMap.delete(cookieInfo.cookieKey);
             if (cookieMap.size === 0){
                 pathMap.delete(cookieInfo.path);
@@ -176,15 +177,15 @@ class TCPHttpCookieContainer{
                 const [avName, avValue] = avPairString.split('=').map(part => part.trim());
                 switch (avName.toLowerCase()) {
                     case "expires":
-                        const cookieExpiry = this.parseCookieDate(avValue);
-                        if (cookieExpiry){
-                            cookie.cookieExpiry = cookieExpiry;
+                        const cookieExpiryTime = this.parseCookieDate(avValue);
+                        if (cookieExpiryTime){
+                            cookie.cookieExpiryTime = cookieExpiryTime;
                         }
                         break;
                     case "max-age":
                         const cookieMaxAge = this.parseCookieMaxAge(avValue);
                         if (cookieMaxAge){
-                            cookie.cookieExpiry = cookieMaxAge;
+                            cookie.cookieExpiryTime = cookieMaxAge;
                         }
                         break;
                     case "domain":
@@ -219,73 +220,13 @@ class TCPHttpCookieContainer{
         try{
             if (typeof cookieDate !== 'string' || cookieDate.trim() === '') {
                 return null;
-              }
-            const dateTokens = cookieDate.match(/[^;]+/g);
-          
-            let foundTime = false;
-            let foundDayOfMonth = false;
-            let foundMonth = false;
-            let foundYear = false;
-            
-            let hourValue = 0;
-            let minuteValue = 0;
-            let secondValue = 0;
-            let dayOfMonthValue = 0;
-            let monthValue = 0;
-            let yearValue = 0;
-          
-            for (const dateToken of dateTokens) {
-              if (!foundTime && /^[\d]{1,2}:[\d]{1,2}:[\d]{1,2}$/.test(dateToken)) {
-                foundTime = true;
-                const [hour, minute, second] = dateToken.split(':').map(Number);
-                hourValue = hour;
-                minuteValue = minute;
-                secondValue = second;
-                continue;
-              }
-          
-              if (!foundDayOfMonth && /^[\d]{1,2}$/.test(dateToken)) {
-                foundDayOfMonth = true;
-                dayOfMonthValue = Number(dateToken);
-                continue;
-              }
-          
-              if (!foundMonth && /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)$/i.test(dateToken)) {
-                foundMonth = true;
-                monthValue = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(dateToken.toLowerCase());
-                continue;
-              }
-          
-              if (!foundYear && /^[\d]{2,4}$/.test(dateToken)) {
-                foundYear = true;
-                yearValue = Number(dateToken);
-                continue;
-              }
             }
-          
-            if (yearValue >= 70 && yearValue <= 99) {
-              yearValue += 1900;
-            }
-          
-            if (yearValue >= 0 && yearValue <= 69) {
-              yearValue += 2000;
-            }
-          
-            if (!foundDayOfMonth || !foundMonth || !foundYear || !foundTime ||
-                dayOfMonthValue < 1 || dayOfMonthValue > 31 ||
-                yearValue < 1601 ||
-                hourValue > 23 ||
-                minuteValue > 59 ||
-                secondValue > 59) {
-              return null;
-            }
-          
-            const parsedDate = new Date(Date.UTC(yearValue, monthValue, dayOfMonthValue, hourValue, minuteValue, secondValue));
+            const parsedDate = new Date(cookieDate);
             
             if (isNaN(parsedDate.getTime())) {
               return null;
-            }
-          
+            } 
+
             return parsedDate;
         }
         catch (error){
@@ -301,7 +242,7 @@ class TCPHttpCookieContainer{
             }
         
             if (/[^\d]/.test(maxAgeAVValue.slice(1))) {
-                return; // Ignore the cookie-av
+                return; // Ignore the cookie-av 
             }
         
             const deltaSeconds = parseInt(maxAgeAVValue, 10);
@@ -412,6 +353,19 @@ class TCPHttpCookieContainer{
             pathIndex = path.indexOf('/', pathIndex + 1);
         }
         return combinations;
+    }
+
+    //exports cookies to be saved and re-added later via addCookie with rawCookie = true
+    getAllCookies(){
+        let cookies = []
+        for (const pathMap of this.cookieContainer.values()){
+            for (const cookieMap of pathMap.values()){
+                for (const cookie of cookieMap.values()){
+                    cookies.push(cookie)
+                }
+            }
+        }
+        return cookies
     }
 
 }

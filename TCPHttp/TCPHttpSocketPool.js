@@ -1,10 +1,10 @@
 const TCPHttpSocketWrapper = require("./TCPHttpSocketWrapper");
 
 class TCPHttpSocketPool {
-    constructor() {
+    constructor(socketTimeoutDuration) {
       this.socketPool = new Map();
       this.socketTimeouts = new Map();
-      this.socketTimeoutDuration = 30000;
+      this.socketTimeoutDuration = socketTimeoutDuration ?? 30000;
     }
   
     _startListeners(socket, socketKey){

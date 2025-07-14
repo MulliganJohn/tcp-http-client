@@ -5,6 +5,7 @@ class TCPHttpResponseMessage {
       this.statusVersion = null;
       this.headers = [];
       this.content = null;
+      this.redirectChain = null;
     }
   
     getHeaderValues(targetName) {
