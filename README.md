@@ -49,7 +49,7 @@ This class is the main class responsible for sending and receiving requests over
   const options = {
   	proxy: {
   		host: "127.0.0.1",
-  		port: 8888
+  		port: 8888,
         authorization: {
     	    username: "username",
             password: "password"
