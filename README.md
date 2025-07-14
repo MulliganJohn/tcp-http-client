@@ -43,32 +43,32 @@ This class is the main class responsible for sending and receiving requests over
 | `allowRedirects`| `(Boolean)` |If specified, turns on automatic redirects with a default maxRedirect value of 10. |
 | `maxRedirects`| `(Integer)` |If specified, changes the default max redirect value (10) to something else.|
 
-  ```javascript
-  const {TCPHttpClient, TCPHttpRequest, TCPHttpMethod} = require('tcp-http-client');
-  //TCPHttpClient initialized with a Proxy and Cookie Container
-  const options = {
-  	proxy: {
-  		host: "127.0.0.1",
-  		port: 8888,
-        authorization: {
-    	    username: "username",
-            password: "password"
-        }
-  	},
-  	CookieContainer: false,
-    socketTimeoutDuration: 60000,
-    allowRedirects: true,
-    maxRedirects: 5
-  };
-  const client = new TCPHttpClient(options);
+```javascript
+const {TCPHttpClient, TCPHttpRequest, TCPHttpMethod} = require('tcp-http-client');
+//TCPHttpClient initialized with a Proxy and Cookie Container
+const options = {
+  proxy: {
+    host: "127.0.0.1",
+    port: 8888,
+    authorization: {
+      username: "username",
+      password: "password"
+    }
+  },
+  CookieContainer: false,
+  socketTimeoutDuration: 60000,
+  allowRedirects: true,
+  maxRedirects: 5
+};
+const client = new TCPHttpClient(options);
 	
-  //Modify options after creation
-  client.CookieContainerEnabled = false
-  client.proxy = null
-  client.socketPool.socketTimeoutDuration = 30000
-  client.maxRedirects = 10
-  client.allowRedirects = false
-  ```
+//Modify options after creation
+client.CookieContainerEnabled = false
+client.proxy = null
+client.socketPool.socketTimeoutDuration = 30000
+client.maxRedirects = 10
+client.allowRedirects = false
+```
 
 
 | Method | Parameters | Returns | Description |
